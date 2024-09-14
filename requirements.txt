@@ -1,0 +1,15 @@
+pydeck==0.8.0
+dash==2.14.2
+dash-bootstrap-components==1.6.0
+dash-core-components==2.0.0
+dash-html-components==2.0.0
+dash-table==5.0.0
+jsonpatch==1.33
+jsonpointer==3.0.0
+jsonschema==4.20.0
+jsonschema-specifications==2023.11.1
+pandas==2.1.1
+pandas-profiling==3.6.6
+pandas-visual-analysis==0.0.4
+matplotlib==3.8.0
+matplotlib-inline==0.1.6
