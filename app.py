@@ -23,18 +23,18 @@ Update data source : https://www.insee.fr/fr/statistiques/7630376 (2020)
 """
 
 # Charger les données
-df = pd.read_csv(r'c:\Users\axel.benoit\Documents\Demandes ponctuelles\Aurélie\flow.csv', sep=';', encoding='utf-8')
+# Flow data
+df = pd.read_csv('https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/data/flow.csv', sep=';', encoding='utf-8')
 df['FLUX'] = df['FLUX'].astype('int64')
 
-# Chemin vers le fichier JSON
-file_path_dep = r'c:\Users\axel.benoit\Documents\Demandes ponctuelles\Aurélie\dep (1).json'
-with open(file_path_dep, 'r') as file:
-    dep = json.load(file)
+# Administrative boundaries
+file_path_dep = 'https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/data/dep.json'
+response = requests.get(file_path_dep)
+dep = response.json()
 
-# Chemin vers le fichier JSON
-file_path_com = r'c:\Users\axel.benoit\Documents\Demandes ponctuelles\Aurélie\com (2).json'
-with open(file_path_com, 'r') as file:
-    com = json.load(file)
+file_path_com = 'https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/data/com.json'
+response = requests.get(file_path_com)
+com = response.json()
 
 # Codes de couleur
 RED_RGB = [234, 75, 60, 255]  # RGBA
@@ -53,6 +53,7 @@ COLOR_RANGE = [
 
 # Initialiser l'application Dash
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server
 
 app.layout = html.Div(
     style={
