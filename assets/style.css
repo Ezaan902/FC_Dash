@@ -1,0 +1,27 @@
+/* assets/custom.css */
+.custom-slider .rc-slider-track {
+    background-color: #0F3250 !important;
+}
+
+.custom-slider .rc-slider-handle {
+    border-color: #EA4B3C !important;
+}
+
+.custom-slider .rc-slider-rail {
+    background-color: #EE776E !important;
+}
+
+/* Style pour le bouton avec coins arrondis et changement de couleur au survol */
+#export-button {
+    border-radius: 12px;  /* Coins arrondis */
+    padding: 10px 20px;  /* Padding */
+    background-color: #EA4B3C;  /* Couleur de fond */
+    color: white;  /* Couleur du texte */
+    border: none;  /* Pas de bordure */
+    cursor: pointer;  /* Curseur en forme de pointeur */
+    transition: background-color 0.3s;  /* Transition pour le changement de couleur */
+}
+
+#export-button:hover {
+    background-color: #0056b3;  /* Couleur de fond au survol */
+}
