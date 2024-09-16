@@ -1,4 +1,16 @@
 # %%
+
+"""
+Pydeck / ArcLayer
+========
+
+Documentation: https://deckgl.readthedocs.io/en/latest/index.html
+flow source : CMANA Nouvelle-aquitaine.
+dep, com source : Institut national de la statistique et des études économiques (INSEE)
+
+"""
+
+# 1. Importer les bibliothèques
 import dash
 from dash import dcc
 from dash import html
@@ -12,23 +24,82 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import numpy as np
 import requests
+import plotly.graph_objects as go
+from unidecode import unidecode
 
 
-"""
-Pydeck / ArcLayer
-========
+# 1.  Fonctions utilitaires et spécifications de couleurs
+def remove_accents(df, columns):
+    for column in columns:
+        df[column] = df[column].apply(lambda x: unidecode(x) if isinstance(x, str) else x)
+    return df
 
-Documentation: https://deckgl.readthedocs.io/en/latest/index.html
-Update data source : https://www.insee.fr/fr/statistiques/7630376 (2020)
+def prepare_sankey_data(df):
+    labels = list(pd.concat([df['ORIGINE_NAME'], df['DESTINATION_NAME']]).unique())
+    source_indices = [labels.index(origin) for origin in df['ORIGINE_NAME']]
+    target_indices = [labels.index(destination) for destination in df['DESTINATION_NAME']]
+    values = df['FLUX'].tolist()
+    
+    return labels, source_indices, target_indices, values
 
-"""
+def create_sankey_diagram(df):
+    labels, sources, targets, values = prepare_sankey_data(df)
+    
+    fig = go.Figure(data=[go.Sankey(
+        node=dict(
+            pad=15,
+            thickness=20,
+            line=dict(color="white", width=2),
+            label=labels,
+            color="rgba(15, 50, 80, 0.8)"
+        ),
+        link=dict(
+            source=sources,
+            target=targets,
+            value=values,
+            color='rgba(15, 50, 80, 0.10)',
+            label=df['FORMATION']
+        )
+    )])
+    
+    fig.update_layout(
+        title_text="Diagramme de Sankey des Flux de Formation",
+        font=dict(
+            size=15,
+            family="Roboto Slab",
+            color="#222222"
+        ),
+        autosize=False,
+        width=800,
+        height=800,
+        margin=dict(l=20, r=20, t=20, b=20)
+    )
+    return fig
 
-# Charger les données
+# Color specifications
+RED_RGB = [234, 75, 60, 255]  # RGBA
+BLUE_RGB = [15, 50, 80, 255]  # RGBA
+LIGHTBLUE_RGB = [15, 50, 80, 20]  # RGBA
+GREY_RGB = [255, 255, 255, 255]  # RGBA
+ORANGE_RGB = [234, 75, 60, 255]  # RGBA
+HIGHLIGHT_RGB = [234, 75, 60, 255]  # RGBA
+COLOR_RANGE = [
+    [15, 50, 80],
+    [176, 210, 217],
+    [238, 119, 110],
+    [234, 75, 50],
+]
+
+
+
+# 3. Charger les données
 # Flow data
 df = pd.read_csv('https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/data/flow.csv', sep=';', encoding='utf-8')
 df['FLUX'] = df['FLUX'].astype('int64')
+columns_to_clean = ['ORIGINE_NAME', 'DESTINATION_NAME', 'FORMATION']
+df = remove_accents(df, columns_to_clean)
 
-# Administrative boundaries
+# Limites administratives pour les départements et les communes
 file_path_dep = 'https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/data/dep.json'
 response = requests.get(file_path_dep)
 dep = response.json()
@@ -37,77 +108,49 @@ file_path_com = 'https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/data/co
 response = requests.get(file_path_com)
 com = response.json()
 
-# Codes de couleur
-RED_RGB = [234, 75, 60, 255]  # RGBA
-BLUE_RGB = [15, 50, 80, 255]  # RGBA
-LIGHTBLUE_RGB = [15, 50, 80, 20]  # RGBA
-GREY_RGB = [255, 255, 255, 255]  # RGBA
-ORANGE_RGB = [234, 75, 60, 255]  # RGBA
-HIGHLIGHT_RGB = [234, 75, 60, 255]  # RGBA
+"""
+file_path_com = 'https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/data/com.json'
+response = requests.get(file_path_com)
+com = response.json()
+"""
 
-COLOR_RANGE = [
-    [15, 50, 80],
-    [176, 210, 217],
-    [238, 119, 110],
-    [234, 75, 50],
-]
+file_path_img = 'https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/assets/CMAregion-horizontal-rouge.png'
 
-# Initialiser l'application Dash
+
+# 4. Initialiser l'application Dash
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-server = app.server
+# server = app.server
 
 app.layout = html.Div(
     style={
         'margin': '20px'  # Ajustez la marge selon vos besoins
     },
     children=[
-        html.H1(
-            "CARTOGRAPHIE DES APPRENANTS", 
-            style={
-                'textAlign': 'left', 
-                'marginBottom': '20px', 
-                'font': 'RobotoSlab', 
-                'fontWeight': 'bold', 
-                'fontSize': '32px'  # Ajustez la taille de la police ici
-            }
-        ),
-                html.H3(
-            [
-                "Représentation  cartographique des flux d'apprenants (formation courte) à destination des sites de formation de la CMA Nouvelle-Aquitaine.",
-            ],
-            style={
-                'textAlign': 'left', 
-                'marginBottom': '10px', 
-                'font': 'RobotoSlab', 
-                'fontWeight': 'semibold', 
-                'fontSize': '16px'  # Ajustez la taille de la police ici
-            }
-        ),
+        dbc.Row([
+            dbc.Col([
+                html.Img(src=file_path_img, className='logo')  # Utilisez la classe CSS pour le logo
+            ], width='auto'),
+            dbc.Col([
+                html.H1(
+                    "CARTOGRAPHIE DES APPRENANTS", 
+                    className='title'  # Utilisez la classe CSS pour le titre
+                )
+            ], width='auto')
+        ], align='center'),
+
         html.H3(
-            [
-                "Un apprenant est un individu inscrit à une formation de la CMA Nouvelle-Aquitaine pour la période 2O23 - 2024 (année scolaire). Chaque apprenant est rattaché à une commune de domiciliation et à un site de formation. L'apprenant est considéré comme un flux entre sa commune de domiciliation et le site de formation de la CMA Nouvelle-Aquitaine.",
-                "Les flux sont représentés par des arcs reliant les communes de domiciliation aux sites de formation. La largeur de l'arc est proportionnelle au nombre d'apprenants concernés par le flux.",
-            ],  
-            style={
-                'textAlign': 'left', 
-                'marginBottom': '10px', 
-                'font': 'RobotoSlab', 
-                'fontWeight': 'normal', 
-                'fontSize': '14px'  # Ajustez la taille de la police ici
-            }
+            "Représentation cartographique des flux d'apprenants (formation courte) à destination des sites de formation de la CMA Nouvelle-Aquitaine.",
+            className='subtitle'  # Utilisez la classe CSS pour les sous-titres
         ),
-        html.H3(
-            [
-                html.I("Données issues de CMA, extraction Yparéo pour l'année 2023-2024.")
-            ],
-            style={
-                'textAlign': 'left',
-                'marginBottom': '10px',
-                'font': 'RobotoSlab',
-                'fontWeight': 'normal',
-                'fontSize': '10px'  # Ajustez la taille de la police ici
-            }
+        html.P(
+            "Un apprenant est un individu inscrit à une formation de la CMA Nouvelle-Aquitaine pour la période 2023 - 2024 (année scolaire). Chaque apprenant est rattaché à une commune de domiciliation et à un site de formation. L'apprenant est considéré comme un flux entre sa commune de domiciliation et le site de formation de la CMA Nouvelle-Aquitaine. Les flux sont représentés par des arcs reliant les communes de domiciliation aux sites de formation. La largeur de l'arc est proportionnelle au nombre d'apprenants concernés par le flux.",
+            className='text'  # Utilisez la classe CSS pour les paragraphes
         ),
+        html.P(
+            "Données issues de CMA, extraction Yparéo pour l'année 2023-2024.",
+            className='italic'  # Utilisez la classe CSS pour les informations en italique
+        ),
+
         # Ajoutez ici les autres composants de votre application
         dbc.Row([
             dbc.Col([
@@ -147,6 +190,7 @@ app.layout = html.Div(
                     value=0,  # Valeur initiale
                     marks={i: str(i) for i in range(0, 301, 10)},  # Marqueurs tous les 10
                     tooltip={"placement": "bottom", "always_visible": False},
+                    className='custom-slider'
                 ),
             ], width=12),
         ], className='mb-4'),  # Ajout d'une marge inférieure
@@ -203,6 +247,8 @@ app.layout = html.Div(
                 )
             ], width=4),
         ]),
+        dcc.Graph(id='sankey-diagram'),
+    
         dbc.Row([
             dbc.Col([
                 html.Button(
@@ -223,7 +269,8 @@ app.layout = html.Div(
      Output('flux-slider', 'min'),
      Output('flux-slider', 'max'),
      Output('flux-slider', 'marks'),
-     Output("download-dataframe-csv", "data")],
+     Output("download-dataframe-csv", "data"),
+     Output('sankey-diagram', 'figure')],
     [Input('origine-dropdown', 'value'),
      Input('destination-dropdown', 'value'),
      Input('formation-dropdown', 'value'),
@@ -237,7 +284,8 @@ app.layout = html.Div(
     prevent_initial_call=True,
 )
 
-def update_map_and_table(origine, destination, formation, flux_value, n_clicks, layer_toggle, origine_state, destination_state, formation_state, flux_value_state):
+# 5. Créer la fonction de rappel
+def update_dash(origine, destination, formation, flux_value, n_clicks, layer_toggle, origine_state, destination_state, formation_state, flux_value_state):
     # Initialiser filtered_df avec le DataFrame df
     filtered_df = df.copy()
 
@@ -296,12 +344,25 @@ def update_map_and_table(origine, destination, formation, flux_value, n_clicks, 
     sorted_df = grouped_df.sort_values(by='FLUX', ascending=False)
     #sorted_df['VALUE%'] = sorted_df['FLUX'] / total_filtered_flux * 100
     sorted_df['LOG_VALUE%'] = np.log1p(sorted_df['FLUX'])
+    
+    
     # Définir la rampe de couleur
     #cmap = plt.get_cmap('viridis')
     cmap = mcolors.LinearSegmentedColormap.from_list("", ["#0F3250", "#EA4B3C"])
-
     # Normaliser les valeurs de flux pour qu'elles soient entre 0 et 1
     norm = mcolors.Normalize(vmin=sorted_df['LOG_VALUE%'].min(), vmax=sorted_df['LOG_VALUE%'].max())
+    def color_scale(val):
+        rgba = cmap(norm(val))
+        return [int(255 * c) for c in rgba[:3]] + [127]  # Convertir en RGBA
+
+    # Appliquer la fonction de couleur sur les données
+    # Créer un dictionnaire de mappage pour les couleurs
+    # Mettre à jour les couleurs des communes dans filtered_com
+    sorted_df['color'] = sorted_df['LOG_VALUE%'].apply(color_scale)
+    color_mapping = dict(zip(sorted_df['ORIGINE_CODE'], sorted_df['color']))
+    for feature in filtered_com['features']:
+        insee_code = feature['properties']['insee']
+        feature['properties']['color'] = color_mapping.get(insee_code, [200, 200, 200, 100])
 
     # Calculer les KPI
     # Calculer le nombre total d'apprenants concernés par les données filtrées
@@ -310,20 +371,6 @@ def update_map_and_table(origine, destination, formation, flux_value, n_clicks, 
     percentage = (selected_flux / total_flux) * 100 if total_flux > 0 else 0
     kpi_text = f"APPRENANTS CONCERNES: {selected_flux}"
     percentage_text = f"PART REPRESENTEE: {percentage:.1f}%"
-
-    # Fonction pour mapper les couleurs en fonction des breaks
-    # Appliquer la fonction de couleur sur les données
-    # Créer un dictionnaire de mappage pour les couleurs
-    # Mettre à jour les couleurs des communes dans filtered_com
-    def color_scale(val):
-        rgba = cmap(norm(val))
-        return [int(255 * c) for c in rgba[:3]] + [127]  # Convertir en RGBA
-    
-    sorted_df['color'] = sorted_df['LOG_VALUE%'].apply(color_scale)
-    color_mapping = dict(zip(sorted_df['ORIGINE_CODE'], sorted_df['color']))
-    for feature in filtered_com['features']:
-        insee_code = feature['properties']['insee']
-        feature['properties']['color'] = color_mapping.get(insee_code, [200, 200, 200, 100])
 
     # Plotter les différentes couches
     # ArcLayer pour les flux, GeoJsonLayer pour les départements et les communes
@@ -441,17 +488,24 @@ def update_map_and_table(origine, destination, formation, flux_value, n_clicks, 
             slider_marks,
             dcc.send_data_frame(filtered_df.to_excel, "filtered_data.xlsx", index=False)
         )
+    
+    # Créer le diagramme de Sankey
+    sankey_figure = create_sankey_diagram(filtered_df)
 
-    return html.Iframe(
-        srcDoc=r.to_html(as_string=True),
-        width='100%',
-        height='600'
-    ), table_data, html.Div([
-        html.Div(kpi_text, style={'fontSize': '16px'}),
-        html.Div(percentage_text, style={'fontSize': '16px'})  # Diminuer la taille de la police ici
-    ]), slider_min, slider_max, slider_marks,dash.no_update
+    return (
+        html.Iframe(
+            srcDoc=r.to_html(as_string=True),
+            width='100%',
+            height='600'
+        ),
+        table_data,
+        html.Div([html.Div(kpi_text, style={'fontSize': '16px'}), html.Div(percentage_text, style={'fontSize': '16px'})]),
+        slider_min,
+        slider_max,
+        slider_marks,
+        sankey_figure,
+        dash.no_update,
+    )
 
 if __name__ == '__main__':
     app.run_server(debug=True)
-
-
