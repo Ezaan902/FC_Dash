@@ -179,7 +179,7 @@ file_path_img = 'https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/assets/
 
 # 4. Initialiser l'application Dash
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-# server = app.server
+server = app.server
 
 app.layout = html.Div(
     style={
