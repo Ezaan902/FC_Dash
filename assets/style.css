@@ -6,7 +6,7 @@ h1.title {
     margin-bottom: 20px;
     font-family: 'Roboto Slab', serif;
     font-weight: bold;
-    font-size: 32px;
+    font-size: 40px;
 }
 
 /* Style pour les sous-titres */
@@ -15,7 +15,7 @@ h3.subtitle {
     margin-bottom: 10px;
     font-family: 'Roboto Slab', serif;
     font-weight: semibold;
-    font-size: 16px;
+    font-size: 20px;
 }
 
 /* Style pour les paragraphes */
@@ -24,7 +24,7 @@ p.text {
     margin-bottom: 10px;
     font-family: 'Roboto Slab', serif;
     font-weight: normal;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 /* Style pour les informations en italique */
@@ -40,7 +40,7 @@ p.italic {
 /* Style pour le logo */
 img.logo {
     height: 60px;
-    margin-right: 20px;
+    margin-right: 10px;
 }
 
 /* Style pour le slider */
@@ -53,7 +53,52 @@ img.logo {
 }
 
 .custom-slider .rc-slider-rail {
-    background-color: #EE776E !important;
+    background-color: #f1958f !important;
+}
+
+/* Style pour les marqueurs du slider 
+.custom-slider .rc-slider-mark-text {
+    color: #222222 !important;} Change la couleur du texte des marqueurs */
+
+.custom-slider .rc-slider-dot {
+    border-color: #ea4b3c !important;  
+    background-color: #ffffff !important;  
+}
+
+.custom-slider .rc-slider-tooltip {
+    background-color: #ea4b3c !important;  
+    border-color: #ea4b3c !important;  
+    color: #ffffff !important;  
+}
+
+/* Style pour les titres des dropdowns */
+.custom-dropdown-label {
+    font-family: 'Roboto Slab', sans-serif; 
+    font-size: 16px;  
+    color: #222222;  
+}
+
+/* Style pour les valeurs des dropdowns */
+.custom-dropdown .Select-control {
+    font-family: 'Roboto Slab', sans-serif;  
+    font-size: 14px;  
+    color: #222222;  
+}
+
+/* Style pour les cases à cocher */
+.custom-checkbox .form-check-input:checked {
+    background-color: #ea4b3c;  /* Change la couleur de fond de la case cochée */
+    border-color: #ea4b3c;  /* Change la couleur de la bordure de la case cochée */
+}
+
+.custom-checkbox .form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(234, 75, 60, 0.25);  /* Change la couleur de l'ombre de la case cochée */
+}
+
+.custom-checkbox .form-check-label {
+    font-family: 'Roboto Slab', sans-serif;  /* Change la police du label */
+    font-size: 14px;  /* Ajustez la taille de la police selon vos besoins */
+    color: #222222;  /* Change la couleur du texte du label */
 }
 
 /* Style pour le bouton avec coins arrondis et changement de couleur au survol */
