@@ -1,10 +1,55 @@
 /* assets/custom.css */
+
+/* Style pour le titre principal */
+h1.title {
+    text-align: left;
+    margin-bottom: 20px;
+    font-family: 'Roboto Slab', serif;
+    font-weight: bold;
+    font-size: 32px;
+}
+
+/* Style pour les sous-titres */
+h3.subtitle {
+    text-align: left;
+    margin-bottom: 10px;
+    font-family: 'Roboto Slab', serif;
+    font-weight: semibold;
+    font-size: 16px;
+}
+
+/* Style pour les paragraphes */
+p.text {
+    text-align: left;
+    margin-bottom: 10px;
+    font-family: 'Roboto Slab', serif;
+    font-weight: normal;
+    font-size: 14px;
+}
+
+/* Style pour les informations en italique */
+p.italic {
+    text-align: left;
+    margin-bottom: 10px;
+    font-family: 'Roboto Slab', serif;
+    font-weight: normal;
+    font-size: 10px;
+    font-style: italic;
+}
+
+/* Style pour le logo */
+img.logo {
+    height: 60px;
+    margin-right: 20px;
+}
+
+/* Style pour le slider */
 .custom-slider .rc-slider-track {
-    background-color: #0F3250 !important;
+    background-color: #ea4b3c !important;
 }
 
 .custom-slider .rc-slider-handle {
-    border-color: #EA4B3C !important;
+    border-color: #EE776E !important;
 }
 
 .custom-slider .rc-slider-rail {
@@ -20,6 +65,32 @@
     border: none;  /* Pas de bordure */
     cursor: pointer;  /* Curseur en forme de pointeur */
     transition: background-color 0.3s;  /* Transition pour le changement de couleur */
+}
+
+/* Style pour le tableau */
+.data-table {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Style pour l'en-tête du tableau */
+.data-table .dash-header {
+    background-color: #ea4b3c;
+    color: white;
+    font-weight: bold;
+}
+
+/* Style pour les cellules du tableau */
+.data-table .dash-cell {
+    color: #222222;
+}
+
+/* Style pour les flèches de pagination */
+.data-table .dash-pagination .previous-page, 
+.data-table .dash-pagination .next-page {
+    background-color: #ea4b3c;
+    color: white;
+    border-radius: 5px;
 }
 
 #export-button:hover {
