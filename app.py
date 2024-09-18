@@ -29,6 +29,47 @@ from unidecode import unidecode
 
 
 # 2. Fonctions utilitaires et spécifications de couleurs
+
+def list_files_in_github_folder(repo_owner, repo_name, folder_path):
+    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{folder_path}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        files = response.json()
+        return [file['name'] for file in files if file['name'].endswith('.geojson')]
+    else:
+        print(f"Erreur lors de la récupération des fichiers : {response.status_code}")
+        return []
+
+def load_geojson_from_github(repo_owner, repo_name, folder_path):
+    geojson_data = []
+    file_names = list_files_in_github_folder(repo_owner, repo_name, folder_path)
+    
+    for file_name in file_names:
+        file_url = f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/main/{folder_path}/{file_name}"
+        response = requests.get(file_url)
+        if response.status_code == 200:
+            data = response.json()
+            geojson_data.append(data)
+        else:
+            print(f"Erreur lors du téléchargement du fichier {file_name} : {response.status_code}")
+    
+    return geojson_data
+
+def filter_geojson_by_insee(geojson_files, insee_codes):
+    filtered_features = []
+    for geojson in geojson_files:
+        for feature in geojson.get('features', []):
+            if feature['properties'].get('code-insee') in insee_codes:
+                filtered_features.append(feature)
+    return {
+        "type": "FeatureCollection",
+        "features": filtered_features
+    }
+
+def fc_filter(input_df):
+    filtered_df_fc = input_df[input_df['FORMATION'].str.startswith('FC')]
+    return filtered_df_fc
+
 def remove_accents(input_df, columns):
     for column in columns:
         input_df[column] = input_df[column].apply(lambda x: unidecode(x) if isinstance(x, str) else x)
@@ -138,8 +179,10 @@ def make_sankey_chart(input_df, flux_threshold):
 RED_RGB = [234, 75, 60, 255]  # RGBA
 BLUE_RGB = [15, 50, 80, 255]  # RGBA
 LIGHTBLUE_RGB = [15, 50, 80, 20]  # RGBA
-GREY_RGB = [255, 255, 255, 255]  # RGBA
+WHITE_RGB = [255, 255, 255, 255]  # RGBA
+GREY_RGB = [85, 85, 85, 255]  # RGBA
 ORANGE_RGB = [234, 75, 60, 255]  # RGBA
+LIGHTORANGE_RGB = [238, 119, 110, 50]  # RGBA
 HIGHLIGHT_RGB = [234, 75, 60, 255]  # RGBA
 COLOR_RANGE = [
     [15, 50, 80],
@@ -154,6 +197,7 @@ COLOR_RANGE = [
 # Flow data
 df = pd.read_csv('https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/data/flow.csv', sep=';', encoding='utf-8')
 df['FLUX'] = df['FLUX'].astype('int64')
+df = fc_filter(df)
 columns_to_clean = ['ORIGINE_NAME', 'DESTINATION_NAME', 'FORMATION']
 df = remove_accents(df, columns_to_clean)
 
@@ -166,12 +210,10 @@ file_path_com = 'https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/data/co
 response = requests.get(file_path_com)
 com = response.json()
 
-# Isochrones
-"""
-file_path_com = 'https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/data/com.json'
-response = requests.get(file_path_com)
-com = response.json()
-"""
+repo_owner = 'Ezaan902'
+repo_name = 'FC_Dash'
+folder_path = 'data/iso'
+iso_geojson_files = load_geojson_from_github(repo_owner, repo_name, folder_path)
 
 # logo
 file_path_img = 'https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/assets/CMAregion-horizontal-rouge.png'
@@ -196,7 +238,7 @@ app.layout = html.Div(
                     className='title'  # Utilisez la classe CSS pour le titre
                 )
             ], width='auto')
-        ], align='center', style={'marginBottom': '50px'}),
+        ], align='center', style={'marginBottom': '30px'}),
 
         html.H3(
             "Représentation cartographique des flux d'apprenants (formation courte) à destination des sites de formation de la CMA Nouvelle-Aquitaine.",
@@ -264,9 +306,10 @@ app.layout = html.Div(
                     options=[
                         {"label": "Flux", "value": "show_arcs"},
                         {"label": "Communes", "value": "show_com"},
-                        {"label": "Isochrones", "value": "show_iso"},
+                        {"label": "departements", "value": "show_dep"},
+                        {"label": "Isochrones (30 min)", "value": "show_iso"},
                     ],
-                    value=["show_arcs"],  # Valeurs par défaut activées
+                    value=["show_arcs", "show_dep"],  # Valeurs par défaut activées
                     id="layer-toggle",
                     inline=True,
                     className='custom-checkbox'
@@ -277,15 +320,15 @@ app.layout = html.Div(
         # Ajout de la carte en haut
         dbc.Row([
             dbc.Col([
-                html.Div(id='map-container', style={'height': '50vh'})
-            ], width=12)
+                html.Div(id='map-container', style={'height': '50vh', 'marginBottom': '5vh'})
+            ], width=12, style={'height': '50vh', 'marginBottom': '5vh'}),
         ], align='center'),
 
         dbc.Row([
             dbc.Col([
                 dbc.Row([
-                    html.Div("APPRENANTS CONCERNES :", className='custom-dropdown-label',style={'textAlign': 'center', 'fontSize': '20'}),
-                    html.Div("(Total d'apprenants 10334)", style={'textAlign': 'center', 'fontSize': '10', 'marginBottom': '10px', 'color': '#EA4B3C', 'fontStyle': 'italic'}),
+                    html.Div("APPRENANTS CONCERNES :", className='custom-dropdown-label',style={'textAlign': 'center', 'fontSize': '5'}),
+                    html.Div(f"(Total d'apprenants {df['FLUX'].sum()})", style={'textAlign': 'center', 'fontSize': '10', 'marginBottom': '1vh', 'color': '#EA4B3C', 'fontStyle': 'italic'}),
                     dcc.Graph(id='pie-chart', style={'height': '25vh'}),
                 ])
             ], width=4),
@@ -306,7 +349,7 @@ app.layout = html.Div(
                     },
                 )
             ], width=8)
-        ], align='center', style={'marginTop': '180px', 'marginBottom': '20px'}),
+        ], align='center', style={'marginTop': '40vh', 'marginBottom': '5vh'}),
     ]
 )
 
@@ -331,6 +374,7 @@ def update_dash(origine, destination, formation, flux_value, layer_toggle):
 
     arc_layer=None
     com_layer=None
+    dep_layer=None
     iso_layer=None
 
     if origine != 'all':
@@ -339,6 +383,40 @@ def update_dash(origine, destination, formation, flux_value, layer_toggle):
         filtered_df = filtered_df[filtered_df['DESTINATION_NAME'] == destination]
     if formation != 'all':
         filtered_df = filtered_df[filtered_df['FORMATION'] == formation]
+        # Après avoir appliqué les filtres
+    if filtered_df.empty:
+        empty_pie_chart = go.Figure(data=[go.Pie(
+            labels=['Part représentée', 'Autres'],
+            values=[0, 100],
+            hole=.7,
+            marker=dict(colors=['#969696', '#E0E0E0'])
+        )])
+        empty_pie_chart.update_layout(
+            showlegend=False,
+            margin=dict(t=0, b=0, l=0, r=0),
+            annotations=[dict(text="0%", x=0.5, y=0.5, font_size=20, font=dict(weight='bold'), font_color='#222222', showarrow=False)]
+        )
+
+        return (
+            html.Iframe(
+                srcDoc=pdk.Deck(
+                    initial_view_state=pdk.ViewState(
+                        latitude=44.8392,
+                        longitude=-0.5812,
+                        zoom=6,
+                        min_zoom=6,
+                    ),
+                    map_style='https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+                ).to_html(as_string=True),
+                width='100%',
+                height='600'
+            ),
+            [],  # Données de la table vides
+            0,  # Valeur minimale du slider
+            0,  # Valeur maximale du slider
+            {},  # Marques du slider vides
+            empty_pie_chart  # Graphique neutre pour le pie chart
+        )
 
     # Filtrer les départements en fonction des DEP_CODE présents dans les données filtrées
     filtered_df['DEP_CODE'] = filtered_df['DEP_CODE'].astype(str)
@@ -437,7 +515,7 @@ def update_dash(origine, destination, formation, flux_value, layer_toggle):
             get_source_position=["X_START", "Y_START"],
             get_target_position=["X_END", "Y_END"],
             get_tilt=20,
-            get_source_color=LIGHTBLUE_RGB,
+            get_source_color=LIGHTORANGE_RGB,
             get_target_color=BLUE_RGB,
             pickable=True,
             auto_highlight=True,
@@ -445,16 +523,18 @@ def update_dash(origine, destination, formation, flux_value, layer_toggle):
         )
         layers.append(arc_layer)
 
-    dep_layer = pdk.Layer(
-        "GeoJsonLayer",
-        data=filtered_dep,
-        pickable=False,
-        stroked=True,
-        filled= False,
-        extruded=False,
-        get_line_color=GREY_RGB,
-        get_line_width=200
-    )
+    if "show_dep" in layer_toggle:
+        dep_layer = pdk.Layer(
+            "GeoJsonLayer",
+            data=filtered_dep,
+            pickable=False,
+            stroked=True,
+            filled= False,
+            extruded=False,
+            get_line_color=GREY_RGB,
+            get_line_width=200
+        )
+        layers.append(dep_layer)
 
     if "show_com" in layer_toggle:
         com_layer = pdk.Layer(
@@ -465,26 +545,27 @@ def update_dash(origine, destination, formation, flux_value, layer_toggle):
             filled=True,
             extruded=False,
             get_fill_color='properties.color',
-            get_line_color=GREY_RGB,
+            get_line_color=WHITE_RGB,
             get_line_width=100
         )
         layers.append(com_layer)
 
-    """
     if "show_iso" in layer_toggle:
+        selected_insee_codes = filtered_df['DESTINATION_CODE'].unique().astype(str)
+        filtered_iso_geojson = filter_geojson_by_insee(iso_geojson_files, selected_insee_codes)
+        
         iso_layer = pdk.Layer(
             "GeoJsonLayer",
-            data=iso,
+            data=filtered_iso_geojson,
             pickable=False,
             stroked=True,
             filled=True,
             extruded=False,
-            get_fill_color='properties.color',
+            get_fill_color=LIGHTORANGE_RGB,
             get_line_color=ORANGE_RGB,
             get_line_width=100
         )
-        layers.append(com_layer)
-    """
+        layers.append(iso_layer)
 
     view_state = pdk.ViewState(
         latitude=44.8392,
@@ -497,12 +578,12 @@ def update_dash(origine, destination, formation, flux_value, layer_toggle):
 
     TOOLTIP_TEXT = {
         "html": "<b style='color: white;'>{FLUX}</b> Apprenant(s) à destination de <b style='color: white;'>{DESTINATION_NAME} </b><br>"
-                "Commune de domicilisation <b style='color: white;'>{ORIGINE_NAME} </b><br>"
+                "Commune de domicilisation <b style='color: #EE776E;'>{ORIGINE_NAME} </b><br>"
                 "<i style='font-size: 0.7em;'>Source: CMA Nouvelle-Aquitaine 2023-2024</i>"
     }
 
     r = pdk.Deck(
-        layers=[arc_layer, dep_layer, com_layer],
+        layers=[arc_layer, com_layer, dep_layer, iso_layer],
         initial_view_state=view_state,
         map_style='https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
         tooltip=TOOLTIP_TEXT
