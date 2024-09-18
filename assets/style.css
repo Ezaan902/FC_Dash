@@ -30,7 +30,7 @@ p.text {
 /* Style pour les informations en italique */
 p.italic {
     text-align: left;
-    margin-bottom: 10px;
+    margin-bottom: 50px;
     font-family: 'Roboto Slab', serif;
     font-weight: normal;
     font-size: 10px;
@@ -65,8 +65,7 @@ img.logo {
     background-color: #ffffff !important;  
 }
 
-.custom-slider .rc-slider-tooltip {
-    background-color: #ea4b3c !important;  
+.custom-slider .rc-slider-tooltip { 
     border-color: #ea4b3c !important;  
     color: #ffffff !important;  
 }
@@ -85,6 +84,18 @@ img.logo {
     color: #222222;  
 }
 
+/* Modifier la couleur du contour des dropdowns lorsqu'ils sont activés */
+.custom-dropdown .Select.has-value.is-clearable.is-searchable.Select--single:focus-visible {
+    outline-color: #ea4b3c;
+}
+
+/* Modifier la couleur du contour des dropdowns lorsqu'ils sont en focus */
+.custom-dropdown .is-focused:not(.is-open)>.Select-control {
+    border-color: #ea4b3c;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 0 3px rgba(234, 75, 60, .1);
+}
+
+
 /* Style pour les cases à cocher */
 .custom-checkbox .form-check-input:checked {
     background-color: #ea4b3c;  /* Change la couleur de fond de la case cochée */
@@ -93,6 +104,7 @@ img.logo {
 
 .custom-checkbox .form-check-input:focus {
     box-shadow: 0 0 0 0.2rem rgba(234, 75, 60, 0.25);  /* Change la couleur de l'ombre de la case cochée */
+    border-color: #ea4b3c;  /* Change la couleur de la bordure lors du focus */
 }
 
 .custom-checkbox .form-check-label {
