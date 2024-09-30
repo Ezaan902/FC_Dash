@@ -1,13 +1,26 @@
 # %%
 
 """
+Plan de l'application
+=====================
+1. Importer les bibliothèques
+2. Fonctions utilitaires et spécifications de couleurs
+3. Charger les données
+4. Initialiser l'application Dash
+5. Créer la fonction de rappel
+
+Construit à partir de :
+=======================
+Dash / dcc / html / dbc
 Pydeck / ArcLayer
-========
+Plotly / Sankey / Pie / Bar
+Requests
+Pandas / Numpy
+=======================
 
 Documentation: https://deckgl.readthedocs.io/en/latest/index.html
 flow source : CMANA Nouvelle-aquitaine.
 dep, com source : Institut national de la statistique et des études économiques (INSEE)
-
 """
 
 # 1. Importer les bibliothèques
@@ -25,6 +38,7 @@ import matplotlib.colors as mcolors
 import numpy as np
 import requests
 import plotly.graph_objects as go
+import plotly.express as px
 from unidecode import unidecode
 
 
@@ -133,19 +147,41 @@ def processing_sankey_chart(input_df, flux_threshold):
     targets = [val[1] for val in df_links["link"]]
     weights = df_links["weight"]
 
-    return labels, sources, targets, weights, columns
+    return labels, sources, targets, weights
 
 def make_sankey_chart(input_df, flux_threshold):
     # Traitement des données pour le diagramme Sankey
-    labels, sources, targets, weights, columns = processing_sankey_chart(input_df, flux_threshold)
+    labels, sources, targets, weights = processing_sankey_chart(input_df, flux_threshold)
    
     # Créer des listes de couleurs pour les liens et les nœuds
     link_colors = ['rgba(15, 50, 80, 0.10)' for _ in sources]
 
-    # Créer une liste de labels filtrés en fonction du seuil
-    source_labels = input_df['ORIGINE_NAME'].unique()
-    target_labels = input_df['DESTINATION_NAME'].unique()
-    node_colors = ['rgba(15, 50, 80, 0.8)' if label in source_labels else 'rgba(238, 119, 110, 0.8)' if label in target_labels else '#EA4B3C' for label in labels]
+    # Appliquer les couleurs spécifiques aux nœuds sources et cibles
+    node_colors = ['#0f3250']*len(labels)
+
+    if input_df.empty:
+        # Sankey diagram vide
+        empty_sankey_chart = go.Figure(data=[go.Sankey(
+            node=dict(
+                pad=15,
+                thickness=20,
+                line=dict(color="black", width=0.5),
+                label=[],
+                color=[]
+            ),
+            link=dict(
+                source=[],
+                target=[],
+                value=[]
+            )
+        )])
+        empty_sankey_chart.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(t=0, b=0, l=0, r=0),
+            annotations=[dict(text="Aucune donnée disponible", x=0.5, y=0.5, font_size=20, font=dict(weight='bold'), font_color='#222222', showarrow=False)]
+        )
+        return empty_sankey_chart
 
     # Créer la figure
     fig = go.Figure(data=[go.Sankey(
@@ -164,16 +200,104 @@ def make_sankey_chart(input_df, flux_threshold):
     ))])
 
     fig.update_layout(
-        autosize=False,
-        width=800,  
-        height=800,  
+        autosize=True, 
         title_text=None, 
-        font_size=15, 
-        font_family="Roboto Slab", 
+        font_size=10, 
+        font_family="Montserrat", 
         font_color="#222222", 
-        margin=dict(l=20, r=20, t=20, b=20)
+        margin=dict(l=5, r=5, t=20, b=20)
     )
-    fig.show()
+    return fig
+
+def make_pie_chart(input_df, total_flux):
+    percentage = (input_df / total_flux) * 100 if total_flux > 0 else 0
+    kpi_text = str(input_df)
+    pie_chart = go.Figure(data=[go.Pie(
+        labels=['Part représentée', 'Autres'],
+        values=[percentage, 100 - percentage],
+        hole=.7,
+        marker=dict(colors=['#0F3250', '#EA4B3C'])
+    )])
+    pie_chart.update_layout(
+        showlegend=False,
+        plot_bgcolor='rgba(0,0,0,0)',  # Couleur de fond du graphique
+        paper_bgcolor='rgba(0,0,0,0)',  # Couleur de fond du papier
+        margin=dict(t=0, b=0, l=0, r=0),
+        annotations=[dict(text=kpi_text, x=0.5, y=0.5, font_size=20, font=dict(weight='bold'), font_color='#222222', showarrow=False)]
+    )
+    
+    return pie_chart
+
+def make_bar_chart(input_df):
+    if input_df.empty:
+        # bar-chart vide
+        empty_bar_chart = go.Figure(data=[go.Bar(
+            x=[],
+            y=[],
+            marker=dict(color='#E0E0E0')
+        )])
+        empty_bar_chart.update_layout(
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(t=0, b=0, l=0, r=0),
+            annotations=[dict(text="Aucune donnée disponible", x=0.5, y=0.5, font_size=20, font=dict(weight='bold'), font_color='#222222', showarrow=False)]
+        )
+        return empty_bar_chart
+    
+    df_aggregated = input_df.groupby('ORIGINE_NAME', as_index=False)['FLUX'].sum()
+    df_aggregated = df_aggregated.sort_values(by='FLUX', ascending=False)
+    df_top10 = df_aggregated.head(10)
+    bar_fig = px.bar(df_top10, x='ORIGINE_NAME', y='FLUX', text='FLUX')
+    
+    bar_fig.update_layout(
+       xaxis=dict(
+           title='',
+            showticklabels=True,  
+            tickfont=dict(
+                size=10,
+                family="Montserrat, sans-serif"),  
+            showgrid=False,  
+            zeroline=False  
+        ),
+        yaxis=dict(
+            title='',
+            showticklabels=False,  
+            showgrid=False, 
+            zeroline=False  
+        ),
+        plot_bgcolor='rgba(0,0,0,0)',  
+        paper_bgcolor='rgba(0,0,0,0)',  
+        font=dict(
+            family="Montserrat, sans-serif",  
+            size=12,  
+            color='#222222'  
+        ),
+        margin=dict(l=0, r=0, t=0, b=0)
+    )
+
+    # Créer la colormap personnalisée
+    cmap = mcolors.LinearSegmentedColormap.from_list("", ["#0F3250", "#EA4B3C"])
+
+    # Convertir la colormap en une liste de couleurs
+    colors = [mcolors.rgb2hex(cmap(i)) for i in np.linspace(0, 1, 256)]
+
+    bar_fig.update_traces(
+        marker=dict(
+            color=df_top10['FLUX'],  
+            colorscale=colors,  
+            showscale=False  
+        ),
+        text=df_top10['FLUX'],  
+        textposition='inside',  
+        textfont=dict(
+            size=13,
+            color="#ffffff"
+        )
+    )
+    
+    return bar_fig
 
 # Color specifications
 RED_RGB = [234, 75, 60, 255]  # RGBA
@@ -219,41 +343,45 @@ iso_geojson_files = load_geojson_from_github(repo_owner, repo_name, folder_path)
 file_path_img = 'https://raw.githubusercontent.com/Ezaan902/FC_Dash/main/assets/CMAregion-horizontal-rouge.png'
 
 
+
+
 # 4. Initialiser l'application Dash
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
 app.layout = html.Div(
     style={
-        'margin': '20px'  # Ajustez la marge selon vos besoins
+        'margin': '3vh'  
     },
     children=[
         dbc.Row([
             dbc.Col([
-                html.Img(src=file_path_img, className='logo', style={'width': '150px', 'height': 'auto'} )  # Utilisez la classe CSS pour le logo
+                html.Img(src=file_path_img, className='logo', style={'width': '40vh', 'height': 'auto'} )
             ], width='auto'),
             dbc.Col([
                 html.H1(
                     "CARTOGRAPHIE DES APPRENANTS", 
-                    className='title'  # Utilisez la classe CSS pour le titre
+                    className='title' 
                 )
             ], width='auto')
-        ], align='center', style={'marginBottom': '30px'}),
+        ], align='center', style={'marginBottom': '5vh'}),
+        dbc.Row([
+            html.H3(
+                "REPRESENTATION CARTOGRAPHIQUE DES FLUX D'APPRENANTS (FORMATION COURTE) A DESTINATION DES SITES DE FORMATION DE LA CMA NOUVELLE-AQUITAINE.",
+                className='subtitle' 
+            ),
+            html.P(
+                "Un apprenant est un individu inscrit à une formation de la CMA Nouvelle-Aquitaine pour la période 2023 - 2024 (année scolaire). Chaque apprenant est rattaché à une commune de domiciliation et à un site de formation. L'apprenant est considéré comme un flux entre sa commune de domiciliation et le site de formation de la CMA Nouvelle-Aquitaine. Les flux sont représentés par des arcs reliant les communes de domiciliation aux sites de formation. La largeur de l'arc est proportionnelle au nombre d'apprenants concernés par le flux.",
+                className='text' 
+            ),
+            html.P(
+                "Données issues de CMA, extraction Yparéo pour l'année 2023-2024.",
+                className='italic' 
+            ),
+        ]),
 
-        html.H3(
-            "Représentation cartographique des flux d'apprenants (formation courte) à destination des sites de formation de la CMA Nouvelle-Aquitaine.",
-            className='subtitle'  # Utilisez la classe CSS pour les sous-titres
-        ),
-        html.P(
-            "Un apprenant est un individu inscrit à une formation de la CMA Nouvelle-Aquitaine pour la période 2023 - 2024 (année scolaire). Chaque apprenant est rattaché à une commune de domiciliation et à un site de formation. L'apprenant est considéré comme un flux entre sa commune de domiciliation et le site de formation de la CMA Nouvelle-Aquitaine. Les flux sont représentés par des arcs reliant les communes de domiciliation aux sites de formation. La largeur de l'arc est proportionnelle au nombre d'apprenants concernés par le flux.",
-            className='text'  # Utilisez la classe CSS pour les paragraphes
-        ),
-        html.P(
-            "Données issues de CMA, extraction Yparéo pour l'année 2023-2024.",
-            className='italic'  # Utilisez la classe CSS pour les informations en italique
-        ),
-
-        # Ajoutez ici les autres composants de votre application
+        # Composantes principales de l'application 
+        # Dropdown box
         dbc.Row([
             dbc.Col([
                 html.Label(html.B('LOCALISATION DES APPRENANTS:'), className='custom-dropdown-label'),
@@ -282,24 +410,25 @@ app.layout = html.Div(
                     className='custom-dropdown'
                 ),
             ], width=4),
-        ], className='mb-4'),  # Ajout d'une marge inférieure
+        ]),
 
-        # Ajout du slider
+        # slider
         dbc.Row([
             dbc.Col([
                 dcc.Slider(
                     id='flux-slider',
-                    min=0,  # Valeur par défaut, sera mise à jour dans le callback
-                    max=300,  # Valeur par défaut, sera mise à jour dans le callback
+                    min=0, 
+                    max=300,  
                     step=1,
-                    value=0,  # Valeur initiale
-                    marks={i: str(i) for i in range(0, 301, 10)},  # Marqueurs tous les 10
+                    value=10, 
+                    marks={i: str(i) for i in range(0, 301, 10)},  
                     tooltip={"placement": "bottom", "always_visible": False},
                     className='custom-slider'
                 ),
             ], width=12),
-        ], className='mb-4'),  # Ajout d'une marge inférieure
+        ], className= 'custom-margin'),  
 
+        # Checklist pour l'ajout des différentes couches géographiques
         dbc.Row([
             dbc.Col([
                 dbc.Checklist(
@@ -309,66 +438,93 @@ app.layout = html.Div(
                         {"label": "departements", "value": "show_dep"},
                         {"label": "Isochrones (30 min)", "value": "show_iso"},
                     ],
-                    value=["show_arcs", "show_dep"],  # Valeurs par défaut activées
+                    value=["show_arcs", "show_dep"],
                     id="layer-toggle",
                     inline=True,
                     className='custom-checkbox'
                 ),
             ], width=12),
-        ], className='mb-4'),
+        ]),
 
-        # Ajout de la carte en haut
+        #  Map container
         dbc.Row([
             dbc.Col([
-                html.Div(id='map-container', style={'height': '50vh', 'marginBottom': '5vh'})
-            ], width=12, style={'height': '50vh', 'marginBottom': '5vh'}),
+                html.Div(id='map-container')
+            ], className = 'custom-map-contenair'),
         ], align='center'),
 
+        # Ajout des composantes KPI (pie-chart, bar-chart, sankey-chart)
         dbc.Row([
+            html.H3("DÉTAIL DE LA REPRÉSENTATION DES FLUX", className='subtitle', style={'marginTop': '18vh'}),
             dbc.Col([
-                dbc.Row([
-                    html.Div("APPRENANTS CONCERNES :", className='custom-dropdown-label',style={'textAlign': 'center', 'fontSize': '5'}),
-                    html.Div(f"(Total d'apprenants {df['FLUX'].sum()})", style={'textAlign': 'center', 'fontSize': '10', 'marginBottom': '1vh', 'color': '#EA4B3C', 'fontStyle': 'italic'}),
-                    dcc.Graph(id='pie-chart', style={'height': '25vh'}),
-                ])
+                dbc.Card(
+                    dbc.CardBody([
+                        html.Div("Apprenants concernés :", className='kpi-headers'),
+                        html.Div(f"(Total d'apprenants {df['FLUX'].sum()})", className='kpi-headers-italic'),
+                        dcc.Graph(id='pie-chart', className='pie-chart'),
+                        html.Div("TOP 10 des flux par territoire d'origine :", className='kpi-headers'),
+                        dcc.Graph(id='bar-chart', className= 'bar-chart'),
+                    ]),
+                    className='custom-card'
+                )
             ], width=4),
             dbc.Col([
-                dash_table.DataTable(
-                    id='flux-table',
-                    columns=[
-                        {'name': 'Origine', 'id': 'ORIGINE_NAME'},
-                        {'name': 'Destination', 'id': 'DESTINATION_NAME'},
-                        {'name': 'Flux', 'id': 'FLUX'}
-                    ],
-                    data=[],
-                    sort_action='native',
-                    style_table={'height': '40vh', 'overflowY': 'auto'},  # Ajustez la hauteur pour correspondre aux pie charts
-                    style_cell={
-                        'textAlign': 'left',
-                        'font-family': 'Arial, sans-serif'  # Changer la police ici
-                    },
+                dbc.Card(
+                    dbc.CardBody([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div("Représentation des flux par un diagramme de sankey", className='kpi-headers', style={'marginBottom': '2vh'}),
+                                html.Div('''Un diagramme de Sankey permet de visualiser des flux entre différentes étapes ou catégories, 
+                                            mettant en évidence la proportion et la direction des flux avec des bandes de largeur variable. 
+                                            Son principal intérêt est de montrer clairement les relations, transferts et contributions entre éléments''', className='texte'),
+                            ], width='auto', className='custom-margin'),
+                             dbc.Col([ 
+                                html.Div("Filtrage de flux minimum", className='kpi-headers', style={'marginRight': '1vh', 'display': 'inline-block'}),
+                                dcc.Input(id='flux-threshold-input', type='number', value=10, min=0, max=300, className='custom-input', style={'display': 'inline-block'})
+                            ], width='auto', className='custom-margin', style={'display': 'flex', 'alignItems': 'center'}),
+
+                            dbc.Col([
+                                html.Div(id='kpi-flux', className='kpi-headers'),
+                            ], width='auto', className='custom-margin', style={'display': 'flex', 'alignItems': 'center'}),
+                        ], align='center'),
+                        dcc.Graph(id='sankey-graph', className='sankey-chart')
+                    ]),
+                    className='custom-card'
                 )
             ], width=8)
-        ], align='center', style={'marginTop': '40vh', 'marginBottom': '5vh'}),
-    ]
+        ]),
+        html.Hr(style={'marginBottom': '1vh'}),
+        html.P(
+            '''Ce tableau de bord a été créé par Axel BENOIT, chargé de mission étude et donnée, 
+            pour la Direction de la formation continue de la  CMA Nouvelle-Aquitaine. Les données utilisées dans ce 
+            tableau de bord proviennent de la CMA Nouvelle-Aquitaine pour l'année 2023-2024. Les données sont représentées 
+            de manière agrégée et ne permettent pas d'identifier des individus spécifiques. Les données brutes ne sont pas disponibles au public.''',
+            className='italic'  
+        ),
+    ],
 )
 
+# Dash callback output and input
 @app.callback(
     [Output('map-container', 'children'),
-     Output('flux-table', 'data'),
      Output('flux-slider', 'min'),
      Output('flux-slider', 'max'),
      Output('flux-slider', 'marks'),
-     Output('pie-chart', 'figure')],
+     Output('kpi-flux', 'children'),
+     Output('pie-chart', 'figure'),
+     Output('bar-chart', 'figure'),
+     Output('sankey-graph', 'figure')],
     [Input('origine-dropdown', 'value'),
      Input('destination-dropdown', 'value'),
      Input('formation-dropdown', 'value'),
      Input('flux-slider', 'value'),
-     Input("layer-toggle", "value")]
+     Input("layer-toggle", "value"),
+     Input('flux-threshold-input', 'value')]
 )
 
+
 # 5. Créer la fonction de rappel
-def update_dash(origine, destination, formation, flux_value, layer_toggle):
+def update_dash(origine, destination, formation, flux_value, layer_toggle, flux_threshold):
     # Initialiser filtered_df avec le DataFrame df
     filtered_df = df.copy()
 
@@ -383,40 +539,7 @@ def update_dash(origine, destination, formation, flux_value, layer_toggle):
         filtered_df = filtered_df[filtered_df['DESTINATION_NAME'] == destination]
     if formation != 'all':
         filtered_df = filtered_df[filtered_df['FORMATION'] == formation]
-        # Après avoir appliqué les filtres
-    if filtered_df.empty:
-        empty_pie_chart = go.Figure(data=[go.Pie(
-            labels=['Part représentée', 'Autres'],
-            values=[0, 100],
-            hole=.7,
-            marker=dict(colors=['#969696', '#E0E0E0'])
-        )])
-        empty_pie_chart.update_layout(
-            showlegend=False,
-            margin=dict(t=0, b=0, l=0, r=0),
-            annotations=[dict(text="0%", x=0.5, y=0.5, font_size=20, font=dict(weight='bold'), font_color='#222222', showarrow=False)]
-        )
 
-        return (
-            html.Iframe(
-                srcDoc=pdk.Deck(
-                    initial_view_state=pdk.ViewState(
-                        latitude=44.8392,
-                        longitude=-0.5812,
-                        zoom=6,
-                        min_zoom=6,
-                    ),
-                    map_style='https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
-                ).to_html(as_string=True),
-                width='100%',
-                height='600'
-            ),
-            [],  # Données de la table vides
-            0,  # Valeur minimale du slider
-            0,  # Valeur maximale du slider
-            {},  # Marques du slider vides
-            empty_pie_chart  # Graphique neutre pour le pie chart
-        )
 
     # Filtrer les départements en fonction des DEP_CODE présents dans les données filtrées
     filtered_df['DEP_CODE'] = filtered_df['DEP_CODE'].astype(str)
@@ -440,10 +563,6 @@ def update_dash(origine, destination, formation, flux_value, layer_toggle):
             if feature.get('properties', {}).get('insee') in com_codes_in_filtered_df
         ]
     }
-    
-    # Calculer les flux totaux pour les données filtrées et non filtrées
-    total_filtered_flux = filtered_df['FLUX'].sum()
-    total_flux = df['FLUX'].sum()
 
     # Grouper les données filtrées par ORIGINE_CODE, ORIGINE_NAME, DESTINATION_CODE, DESTINATION_NAME
     grouped_df = filtered_df.groupby(['ORIGINE_CODE', 'ORIGINE_NAME', 'DESTINATION_CODE', 'DESTINATION_NAME']).agg({
@@ -483,23 +602,22 @@ def update_dash(origine, destination, formation, flux_value, layer_toggle):
         feature['properties']['color'] = color_mapping.get(insee_code, [200, 200, 200, 100])
 
     # Calculer les KPI
+    # Calculer les flux totaux pour les données filtrées et non filtrées
+    total_flux = df['FLUX'].sum()
     # Calculer le nombre total d'apprenants concernés par les données filtrées
-    # Calculer la part des apprenants concernés par rapport au total
     selected_flux = sorted_df['FLUX'].sum()
-    percentage = (selected_flux / total_flux) * 100 if total_flux > 0 else 0
-    kpi_text = str(selected_flux)
 
-    pie_chart = go.Figure(data=[go.Pie(
-        labels=['Part représentée', 'Autres'],
-        values=[percentage, 100 - percentage],
-        hole=.7,
-        marker=dict(colors=['#0F3250', '#EA4B3C'])
-    )])
-    pie_chart.update_layout(
-        showlegend=False,
-        margin=dict(t=0, b=0, l=0, r=0),
-        annotations=[dict(text=kpi_text, x=0.5, y=0.5, font_size=20, font=dict(weight='bold'), font_color='#222222', showarrow=False)]
-    )
+    filtered_df_threshold = df[df['FLUX'] >= flux_threshold]
+    total_flux_threshold = filtered_df_threshold['FLUX'].sum()
+    kpi_text = f"Apprenants concernés par le filtrage : {total_flux_threshold} | Total des apprenants selon sélection : {selected_flux}"
+
+
+    # Créer le diagramme circulaire
+    pie_chart = make_pie_chart(selected_flux, total_flux)
+    # Créer le diagramme Sankey
+    sankey_fig = make_sankey_chart(filtered_df, flux_threshold)
+    # Créer le diagramme en barres
+    bar_fig = make_bar_chart(filtered_df)
 
     # Plotter les différentes couches
     # ArcLayer pour les flux, GeoJsonLayer pour les départements et les communes
@@ -574,6 +692,10 @@ def update_dash(origine, destination, formation, flux_value, layer_toggle):
         pitch=60,
         zoom=6,
         min_zoom=6,
+        max_latitude=45.0, 
+        min_latitude=44.5, 
+        max_longitude=-0.5, 
+        min_longitude=-0.6
     )
 
     TOOLTIP_TEXT = {
@@ -589,11 +711,6 @@ def update_dash(origine, destination, formation, flux_value, layer_toggle):
         tooltip=TOOLTIP_TEXT
     )
 
-    # Créer un tableau de données pour le composant DataTable
-    # Mettre à jour la table pour inclure la colonne de couleur
-    # Définir des règles de style conditionnel pour colorer les cellules
-    # Mettre à jour le composant DataTable
-    table_data = sorted_df[['ORIGINE_NAME', 'DESTINATION_NAME', 'FLUX']].sort_values(by='FLUX', ascending=False).to_dict('records')
 
     # Définir les valeurs min et max du slider
     slider_min = 0
@@ -609,12 +726,14 @@ def update_dash(origine, destination, formation, flux_value, layer_toggle):
             width='100%',
             height='600'
         ),
-        table_data,
         slider_min,
         slider_max,
         slider_marks,
+        kpi_text,
         pie_chart,
+        bar_fig,
+        sankey_fig,
     )
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, port=8053)
