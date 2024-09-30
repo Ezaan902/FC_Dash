@@ -1,46 +1,92 @@
 /* assets/custom.css */
 
+/*
+Utilisation de rem pour la taille de police :
+
+    font-size: 2.5rem; pour le titre principal.
+    font-size: 1.25rem; pour les sous-titres.
+    font-size: 1rem; pour les paragraphes.
+    font-size: 0.625rem; pour les informations en italique.
+    font-size: 1rem; pour les titres des dropdowns.
+    font-size: 0.875rem; pour les valeurs des dropdowns et les labels des cases à cocher.
+
+Utilisation de vh pour les marges :
+
+    margin-bottom: 3vh; pour le titre principal.
+    margin-bottom: 1vh; pour les sous-titres et les paragraphes.
+    margin-bottom: 2vh; pour les informations en italique.
+
+Utilisation de rem pour le padding :
+
+    padding: 0.625rem 1.25rem; pour le bouton d'exportation.
+    padding: 0.625rem; pour les cartes personnalisées.
+
+Conservation de px pour les dimensions fixes :
+
+    height: 60px; et margin-right: 10px; pour le logo.
+    border-radius: 15px; pour les cartes personnalisées et les bannières. 
+*/
+
 /* Style pour le titre principal */
 h1.title {
     text-align: left;
-    margin-bottom: 20px;
+    margin-bottom: 3vh;  
     font-family: 'Roboto Slab', serif;
     font-weight: bold;
-    font-size: 40px;
+    color: #222222;
+    font-size: 3.5rem;  
 }
 
 /* Style pour les sous-titres */
 h3.subtitle {
     text-align: left;
-    margin-bottom: 10px;
+    margin-bottom: 2vh;  
     font-family: 'Roboto Slab', serif;
-    font-weight: semibold;
-    font-size: 20px;
+    font-weight: bold;
+    font-size: 1.50rem;  
 }
 
 /* Style pour les paragraphes */
 p.text {
     text-align: left;
-    margin-bottom: 10px;
-    font-family: 'Roboto Slab', serif;
+    margin-bottom: 1vh;  
+    font-family: 'Montserrat', serif;
     font-weight: normal;
-    font-size: 16px;
+    font-size: 1rem;  
 }
 
 /* Style pour les informations en italique */
 p.italic {
     text-align: left;
-    margin-bottom: 50px;
-    font-family: 'Roboto Slab', serif;
+    margin-bottom: 3vh;  
+    font-family: 'Montserrat', serif;
     font-weight: normal;
-    font-size: 10px;
+    font-size: 0.625rem;  
     font-style: italic;
 }
 
+.kpi-headers {
+    font-family: 'Roboto Slab', sans-serif; 
+    font-size:1rem;  
+    color: #222222;  
+    font-weight: bold;
+    text-align: center;  
+}
+
+
+.kpi-headers-italic {
+    text-align: center;  
+    font-size: 1rem;  
+    margin-bottom: 1vh;  
+    color: #EA4B3C;  
+    font-style: italic;  
+}
+
+
 /* Style pour le logo */
 img.logo {
-    height: 60px;
-    margin-right: 10px;
+    height: 60px;  
+    margin-right: 10px;  
 }
 
 /* Style pour le slider */
@@ -56,9 +102,10 @@ img.logo {
     background-color: #f1958f !important;
 }
 
-/* Style pour les marqueurs du slider 
+/* Style pour les marqueurs du slider */
 .custom-slider .rc-slider-mark-text {
-    color: #222222 !important;} Change la couleur du texte des marqueurs */
+    color: #222222 !important;
+}
 
 .custom-slider .rc-slider-dot {
     border-color: #ea4b3c !important;  
@@ -70,17 +117,26 @@ img.logo {
     color: #ffffff !important;  
 }
 
+.custom-slider {
+    margin-top: 1.25vh;
+    margin-bottom: 1vh;
+}
+
 /* Style pour les titres des dropdowns */
+.custom-dropdown {
+    margin-bottom: 1vh;
+}
+
 .custom-dropdown-label {
     font-family: 'Roboto Slab', sans-serif; 
-    font-size: 16px;  
+    font-size: 1rem;  
     color: #222222;  
 }
 
 /* Style pour les valeurs des dropdowns */
 .custom-dropdown .Select-control {
-    font-family: 'Roboto Slab', sans-serif;  
-    font-size: 14px;  
+    font-family: 'Montserrat', sans-serif;  
+    font-size: 0.875rem;  
     color: #222222;  
 }
 
@@ -95,61 +151,78 @@ img.logo {
     box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 0 3px rgba(234, 75, 60, .1);
 }
 
-
 /* Style pour les cases à cocher */
 .custom-checkbox .form-check-input:checked {
-    background-color: #ea4b3c;  /* Change la couleur de fond de la case cochée */
-    border-color: #ea4b3c;  /* Change la couleur de la bordure de la case cochée */
+    background-color: #ea4b3c;  
+    border-color: #ea4b3c;  
 }
 
 .custom-checkbox .form-check-input:focus {
-    box-shadow: 0 0 0 0.2rem rgba(234, 75, 60, 0.25);  /* Change la couleur de l'ombre de la case cochée */
-    border-color: #ea4b3c;  /* Change la couleur de la bordure lors du focus */
+    box-shadow: 0 0 0 0.2rem rgba(234, 75, 60, 0.25);  
+    border-color: #ea4b3c;  
 }
 
 .custom-checkbox .form-check-label {
-    font-family: 'Roboto Slab', sans-serif;  /* Change la police du label */
-    font-size: 14px;  /* Ajustez la taille de la police selon vos besoins */
-    color: #222222;  /* Change la couleur du texte du label */
+    font-family: 'Roboto Slab', sans-serif;  
+    font-size: 0.875rem;  
+    color: #222222;  
 }
 
-/* Style pour le bouton avec coins arrondis et changement de couleur au survol */
-#export-button {
-    border-radius: 12px;  /* Coins arrondis */
-    padding: 10px 20px;  /* Padding */
-    background-color: #EA4B3C;  /* Couleur de fond */
-    color: white;  /* Couleur du texte */
-    border: none;  /* Pas de bordure */
-    cursor: pointer;  /* Curseur en forme de pointeur */
-    transition: background-color 0.3s;  /* Transition pour le changement de couleur */
+.custom-checkbox {
+    margin-bottom: 0.5vh;
 }
 
-/* Style pour le tableau */
-.data-table {
-    border-radius: 10px;
-    overflow: hidden;
+/* Style pour les inputs */
+.custom-input {
+    border-radius: 10px; 
+    border-color: #ea4b3c; 
+    width: 70px;  
 }
 
-/* Style pour l'en-tête du tableau */
-.data-table .dash-header {
-    background-color: #ea4b3c;
-    color: white;
-    font-weight: bold;
+/* ajout d'un fond générique pour kpi */
+.custom-card {
+    background-color: white;
+    border-radius: 15px;  
+    box-shadow: 0 6px 12px 0 rgba(0, 0, 0, 0.2);
+    padding: 0.625rem;  
+    height: 100%;
 }
 
-/* Style pour les cellules du tableau */
-.data-table .dash-cell {
-    color: #222222;
+/* ajout d'un fond générique pour la banière */
+.banner {
+    background-color: #0f3250; 
+    border-radius: 15px; 
+    padding: 0; 
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); 
 }
 
-/* Style pour les flèches de pagination */
-.data-table .dash-pagination .previous-page, 
-.data-table .dash-pagination .next-page {
-    background-color: #ea4b3c;
-    color: white;
-    border-radius: 5px;
+/* ajout d'une marge régulière */
+.custom-margin {
+    margin-bottom: 1vh;
 }
 
-#export-button:hover {
-    background-color: #0056b3;  /* Couleur de fond au survol */
+/* box contenair */
+.custom-map-contenair {
+    height: 50vh;
+    width: 100%;
+    padding: 0.625rem;
+    margin-bottom: 2vh;
+}
+
+/* Style pour les graphiques */
+.pie-chart {
+    height: 25vh;  
+    margin-bottom: 2vh;  
+}
+
+.bar-chart {
+    height: 40vh;  
+    width: 100%;  
+}
+
+.sankey-chart {
+    height: 60vh;
+    width: 100%;
+    margin: 0; 
+    padding: 0;  
 }
